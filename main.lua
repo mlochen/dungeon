@@ -14,14 +14,15 @@ function love.load()
 		love.mouse.setRelativeMode(true)
 	end
 
-	local worldWidth = 8
-	local worldString = "########\z
-						 # p    #\z
-						 #      #\z
-						 #    # #\z
-						 #  ### #\z
-						 #      #\z
-						 ########"
+	local worldWidth = 16
+	local worldString = "################\z
+						 # p            #\z
+						 #              #\z
+						 #    #         #\z
+						 #  ###         #\z
+						 #          s   #\z
+						 #              #\z
+						 ################"
 
 	worldModel = World_model:new()
 	player = worldModel:init(worldString, worldWidth)
