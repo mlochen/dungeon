@@ -1,10 +1,31 @@
+require("player")
 require("world_model")
 require("world_view")
-require("player")
 
 player = nil
 worldModel = nil
 mouseDelta = 0
+levelIndex = 1
+levels = {
+	{worldString = "#########\z
+					# p     #\z
+					#      s#\z
+					#       #\z
+					#  ###  #\z
+					#   g   #\z
+					#e      #\z
+					#########",
+	 worldWidth = 9},
+	{worldString = "################\z
+					# p        s   #\z
+					#              #\z
+					#    #     e   #\z
+					#  ###         #\z
+					#    s     s   #\z
+					#              #\z
+					################",
+	 worldWidth = 16}
+}
 
 function love.load()
 	love.window.setTitle("Dungeon")
@@ -14,22 +35,21 @@ function love.load()
 		love.mouse.setRelativeMode(true)
 	end
 
-	local worldWidth = 16
-	local worldString = "################\z
-						 # p        s   #\z
-						 #              #\z
-						 #    #         #\z
-						 #  ###         #\z
-						 #    s     s   #\z
-						 #             g#\z
-						 ################"
-
 	worldModel = World_model:new()
-	player = worldModel:init(worldString, worldWidth)
+	player = worldModel:init(levels[1])
 end
 
 function love.update(dt)
 	if love.window.hasFocus() then
+		if (worldModel:levelFinished() == true) then
+			if (levelIndex == #levels) then
+				--os.exit()
+			end
+			levelIndex = levelIndex + 1
+			print(levelIndex)
+			worldModel = World_model.new()
+			player = worldModel:init(levels[levelIndex])
+		end
 		worldModel:update(dt, mouseDelta)
 	end
 	mouseDelta = 0

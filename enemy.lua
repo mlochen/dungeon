@@ -18,6 +18,7 @@ Enemy.sprites = {
 	dying = love.graphics.newImage("images/enemy_dying.png"),
 	dead = love.graphics.newImage("images/enemy_dead.png")
 }
+Enemy.sprite = Enemy.sprites.alive
 Enemy.sounds = {
 	shot = love.audio.newSource("sounds/shot.ogg", 'static')
 }
@@ -27,14 +28,16 @@ Enemy.imageHeight = 200
 function Enemy:new(x, y, world)
 	e = {}
 	setmetatable(e, self)
+	self.__index = self
 	e.x = x
-	x.y = y
+	e.y = y
 	e.world = world
 	return e
 end
 
 function Enemy:update(dt, player, world)
 	if self.alive == true then
+		--[[
 		-- move towards the player
 		local x_delta = player.x - self.x
 		local y_delta = player.y - self.y
@@ -46,7 +49,7 @@ function Enemy:update(dt, player, world)
 		if world:checkLineOfSight(player.x, player.y) == true and
 			world:getDistance(player.x, player.y) <= self.attackDistance then
 			if self.spottedPlayer == false then
-				self.spottedPlayer == true
+				self.spottedPlayer = true
 				self.spottedPlayerTime = love.timer.getTime()
 			else
 				if love.timer.getTime() - self.spottedPlayerTime > self.attackDelay then
@@ -59,10 +62,8 @@ function Enemy:update(dt, player, world)
 		else
 			self.spottedPlayer = false
 		end
+		]]
 	end
-end
-
-function Enemy:draw()
 end
 
 function Enemy:recDamage(damage)

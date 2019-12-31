@@ -9,7 +9,6 @@ Player.reloading = false
 Player.reloadStart = 0
 Player.reloadDuration = 1
 Player.mouseSensitivity = 0.2
-Player.fov = 1.5
 Player.bullets = 8
 Player.sounds = {
 	reload = love.audio.newSource("sounds/reload.ogg", 'static'),

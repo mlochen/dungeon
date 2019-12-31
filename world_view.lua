@@ -1,7 +1,8 @@
 World_view = {}
+World_view.fov = 1.5
 World_view.images = {
 	sky = love.graphics.newImage("images/sky.png"),
-	floor = love.graphics.newImage("images/floor.png"),
+	ground = love.graphics.newImage("images/ground.png"),
 	bullet = love.graphics.newImage("images/bullet.png")
 }
 
@@ -12,14 +13,15 @@ function World_view.draw(w, h, player, worldModel)
 	love.graphics.draw(World_view.images.sky, -skyOffset, 0)
 	love.graphics.draw(World_view.images.sky, -skyOffset + World_view.images.sky:getWidth())
 	
-	local xFactor = w / World_view.images.floor:getWidth()
-	local yFactor = h / 2 / World_view.images.floor:getHeight()
-	love.graphics.draw(World_view.images.floor, 0, h / 2, 0, xFactor, yFactor)
+	local xFactor = w / World_view.images.ground:getWidth()
+	local yFactor = h / 2 / World_view.images.ground:getHeight()
+	love.graphics.draw(World_view.images.ground, 0, h / 2, 0, xFactor, yFactor)
 
-	obj, sw = worldModel:getObjectsInFOV(player.x, player.y, player.a, player.fov)
+	player, walls, enemies, switches = worldModel:getObjects()
+	objects, switches = World_view.getObjectsInFOV(player, walls, enemies, switches)
 
 	-- draw switches
-	for _, switch in pairs(sw) do
+	for _, switch in pairs(switches) do
 		local x1, y1 = World_view.project(player, switch.x, switch.y, w, h)
 		local x2, y2 = World_view.project(player, switch.x + 1, switch.y, w, h)
 		local x3, y3 = World_view.project(player, switch.x + 1, switch.y + 1, w, h)
@@ -28,40 +30,94 @@ function World_view.draw(w, h, player, worldModel)
 		love.graphics.polygon('fill', x1, y1, x2, y2, x3, y3, x4, y4)
 	end
 
-	-- draw walls, enemies
-	for i = 1, #obj do
-		if obj[i].type == "w" then
-			o = obj[i]
+	-- draw walls and enemies
+	for _, o in pairs(objects) do
+		if o.type == "w" then
 			local x1, y1 = World_view.project(player, o.x1, o.y1, w, h)
-			local x2, y2 = World_view.project(player, o.x2, o.y2, w, h)
-
+			local y2 = y1 - (y1 - (h / 2)) * 1.5
+			local x3, y3 = World_view.project(player, o.x2, o.y2, w, h)
+			local y4 = y3 - (y3 - (h / 2)) * 1.5
 			love.graphics.setColor(World_view.adjustColorForDist(o.color, o.dist))
-			love.graphics.polygon('fill', x1, y1, x1, y1 - (y1 - h / 2) / 2, x2, y2 - (y2 - h / 2) / 2, x2, y2)
+			love.graphics.polygon('fill', x1, y1, x1, y2, x3, y4, x3, y3)
 		end
-		if obj[i].type == "e" then
-			o = obj[i]
+		if o.type == "e" then
 			local x, y = World_view.project(player, o.x, o.y, w, h)
-
-			love.graphics.setColor(World_view.adjustColorForDist(0, 0, 0, o.dist))
-			love.graphics.draw(World_view.images.enemy, x, y)
-		end
-		if obj[i].type == "s" then
-			o = obj[i]
-			local x1, y1 = World_view.project(player, o.x, o.y, w, h)
-			local x2, y2 = World_view.project(player, o.x + 1, o.y, w, h)
-			local x3, y3 = World_view.project(player, o.x + 1, o.y + 1, w, h)
-			local x4, y4 = World_view.project(player, o.x, o.y + 1, w, h)
-
-			love.graphics.setColor(World_view.adjustColorForDist(o.color, o.dist))
-			love.graphics.polygon('fill', x1, y1, x2, y2, x3, y3, x4, y4)
+			local imageWidth = o.sprite:getWidth()
+			local imageHeight = o.sprite:getHeight()
+			local drawHeight = (y - (h / 2)) * 1.4
+			local scaleFactor = drawHeight / imageHeight
+			local drawWidth = imageWidth * scaleFactor
+			love.graphics.setColor(World_view.adjustColorForDist({r = 1, g = 1, b = 1}, o.dist))
+			love.graphics.draw(o.sprite, x - drawWidth / 2, y - drawHeight, 0, scaleFactor)
 		end
 	end
 
-	-- draw hud
+	-- draw crosshair
+	love.graphics.setColor(255, 255, 255)
+	love.graphics.line(w / 2, h / 2 - 30, w / 2, h / 2 + 30)
+	love.graphics.line(w / 2 - 30, h / 2, w / 2 + 30, h / 2)
+
+	-- draw energy meter
+	love.graphics.setColor(0, 0, 0)
+	love.graphics.rectangle('fill', 40, h - 62, 204, 14)
+	love.graphics.setColor(200, 0, 0)
+	love.graphics.rectangle('fill', 42, h - 60, player.health * 2, 10)
+
+	-- draw bullets
+	love.graphics.setColor(255, 255, 255)
+	local bullet_x = w - 40 - 25
+	for i = 1, player.bullets do
+		love.graphics.draw(World_view.images.bullet, bullet_x, h - 90, 0, 0.5)
+		bullet_x = bullet_x - 30
+	end
+
+	-- draw debug info
 	love.graphics.setColor(1, 1, 1)
-	love.graphics.print("Number of objects: " .. #obj .. "\n\z
-						 Number of switches: " .. #sw .. "\n\z
+	love.graphics.print("Number of objects: " .. #objects .. "\n\z
+						 Number of switches: " .. #switches .. "\n\z
 	                     Position: " .. player.x .. ", " .. player.y .. "\n", 10, 10)
+end
+
+function World_view.getObjectsInFOV(player, walls, enemies, switches)
+	local objects = {}
+	for _, wall in pairs(walls) do
+		if World_view.pointInFOV(player, wall.x1, wall.y1) or
+		   World_view.pointInFOV(player, wall.cx, wall.cy) or
+		   World_view.pointInFOV(player, wall.x2, wall.y2) then
+			wall.dist = World_view.getDistance(player.x, player.y, wall.cx, wall.cy)
+			table.insert(objects, wall)
+		end
+	end
+
+	for _, enemy in pairs(enemies) do
+		if World_view.pointInFOV(player, enemy.x, enemy.y) then
+			enemy.dist = World_view.getDistance(player.x, player.y, enemy.x, enemy.y)
+			table.insert(objects, enemy)
+		end
+	end
+
+	local sw = {}
+	for _, switch in pairs(switches) do
+		if World_view.pointInFOV(player, switch.x, switch.y) or
+		   World_view.pointInFOV(player, switch.x + 1, switch.y) or
+		   World_view.pointInFOV(player, switch.x, switch.y + 1) or
+		   World_view.pointInFOV(player, switch.x + 1, switch.y + 1) then
+			switch.dist = World_view.getDistance(player.x, player.y, switch.x + 0.5, switch.y + 0.5)
+			table.insert(sw, switch)
+		end
+	end
+
+	table.sort(objects, function(o1, o2) return o1.dist > o2.dist end)
+	return objects, sw
+end
+
+function World_view.pointInFOV(player, x, y)
+	local vx, vy = x - player.x, y - player.y
+	local vlx = math.cos(player.a + World_view.fov / 2)
+	local vly = math.sin(player.a + World_view.fov / 2)
+	local vrx = math.cos(player.a - World_view.fov / 2)
+	local vry = math.sin(player.a - World_view.fov / 2)
+	return (vlx * vy - vly * vx) < 0 and (vrx * vy - vry * vx) > 0
 end
 
 function World_view.project(player, x, y, w, h)
@@ -84,7 +140,7 @@ function World_view.project(player, x, y, w, h)
 
 	local av = math.atan(1 / dist)
 
-	local pixels_per_deg = w / player.fov 
+	local pixels_per_deg = w / World_view.fov 
 
 	local pixels_x = (w / 2) + pixels_per_deg * ah * d
 	local pixels_y = (h / 2) + pixels_per_deg * av
@@ -99,3 +155,10 @@ function World_view.adjustColorForDist(color, dist)
 	end
 	return color.r * f, color.g * f, color.b * f
 end
+
+function World_view.getDistance(x1, y1, x2, y2)
+	local deltaX = x1 - x2
+	local deltaY = y1 - y2
+	return math.sqrt(deltaX ^ 2 + deltaY ^ 2)
+end
+

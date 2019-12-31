@@ -1,3 +1,4 @@
+require("enemy")
 require("wall")
 require("switch")
 
@@ -7,17 +8,18 @@ World_model.player = nil
 World_model.walls = {}
 World_model.enemies = {}
 World_model.switches = {}
+World_model.__index = World_model
 
-function World_model:new()
+function World_model.new()
 	w = {}
-	setmetatable(w, self)
-	self.__index = self
+	setmetatable(w, World_model)
 	return w
 end
 
-function World_model:init(worldString, width)
-	local w = width
-	local h = #worldString / width
+function World_model:init(level)
+	local worldString = level.worldString
+	local w = level.worldWidth
+	local h = #worldString / w
 
 	-- find walls
 	for y = 0, h - 2 do
@@ -53,7 +55,7 @@ function World_model:init(worldString, width)
 			if c == "p" then
 				self.player = Player:new(x + 0.5, y + 0.5)
 			elseif c == "e" then
-				--table.insert(self.enemies, enemy:new(x, y))
+				table.insert(self.enemies, Enemy:new(x + 0.5, y + 0.5))
 			elseif c == "s" then
 				local switch = Switch:new(x, y)
 				switch.type = "s"
@@ -85,8 +87,9 @@ function World_model:update(dt, mouseDelta)
 			end
 		end
 	end
-	for i = 1, #self.enemies do
-		--self.enemies[i]:update(dt)
+
+	for _, enemy in pairs(self.enemies) do
+		enemy:update(dt)
 	end
 
 	local goal_active = true
@@ -105,48 +108,8 @@ function World_model:update(dt, mouseDelta)
 	end
 end
 
-function World_model:getObjectsInFOV(x, y, a, fov)
-	local obj = {}
-	for _, wall in pairs(self.walls) do
-		if self:pointInFOV(wall.x1, wall.y1) or
-		   self:pointInFOV(wall.cx, wall.cy) or
-		   self:pointInFOV(wall.x2, wall.y2) then
-			local delta_x = x - wall.cx
-			local delta_y = y - wall.cy
-			wall.dist = math.sqrt(delta_x ^ 2 + delta_y ^ 2)
-			table.insert(obj, wall)
-		end
-	end
-
-	sw = {}
-	for _, switch in pairs(self.switches) do
-		if self:pointInFOV(switch.x, switch.y) or
-		   self:pointInFOV(switch.x + 1, switch.y) or
-		   self:pointInFOV(switch.x, switch.y + 1) or
-		   self:pointInFOV(switch.x + 1, switch.y + 1) then
-			local delta_x = x - switch.x + 0.5
-			local delta_y = y - switch.y + 0.5
-			switch.dist = math.sqrt(delta_x ^ 2 + delta_y ^ 2)
-			table.insert(sw, switch)
-		end
-	end
-
-	for i = 1, #self.enemies do
-
-	end
-
-	table.sort(obj, function(o1, o2) return o1.dist > o2.dist end)
-	return obj, sw
-end
-
-function World_model:pointInFOV(x, y)
-	local vx, vy = x - self.player.x, y - self.player.y
-	local vlx = math.cos(self.player.a + self.player.fov / 2)
-	local vly = math.sin(self.player.a + self.player.fov / 2)
-	local vrx = math.cos(self.player.a - self.player.fov / 2)
-	local vry = math.sin(self.player.a - self.player.fov / 2)
-
-	return (vlx * vy - vly * vx) < 0 and (vrx * vy - vry * vx) > 0
+function World_model:getObjects()
+	return self.player, self.walls, self.enemies, self.switches
 end
 
 function World_model.wallCollision(character, wall)
@@ -205,5 +168,15 @@ function World_model.wallCollision(character, wall)
 	end
 
 	return pxn, pyn
+end
+
+function World_model:levelFinished()
+	local levelFinished = false
+	for _, switch in pairs(self.switches) do
+		if (switch.type == "g" and switch.pushed == true) then
+			levelFinished = true
+		end
+	end
+	return levelFinished
 end
 
