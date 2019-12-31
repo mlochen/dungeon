@@ -23,13 +23,14 @@ World_view.images = {
 
 function World_view.draw(w, h, player, worldModel)
 	-- draw sky and ground
-	local pixelsPerDeg = World_view.images.sky:getWidth() / (math.pi * 2)
-	local skyOffset = player.a * pixelsPerDeg
-	love.graphics.draw(World_view.images.sky, -skyOffset, 0)
-	love.graphics.draw(World_view.images.sky, -skyOffset + World_view.images.sky:getWidth())
+	local xScaling = w / (World_view.images.sky:getWidth() * World_view.fov / (math.pi * 2))
+	local drawWidth = World_view.images.sky:getWidth() * xScaling
+	local skyOffset = (player.a / (math.pi * 2)) * drawWidth
+	love.graphics.draw(World_view.images.sky, -skyOffset, 0, 0, xScaling)
+	love.graphics.draw(World_view.images.sky, -skyOffset + drawWidth, 0, 0, xScaling)
 	
 	local xFactor = w / World_view.images.ground:getWidth()
-	local yFactor = h / 2 / World_view.images.ground:getHeight()
+	local yFactor = (h / 2) / World_view.images.ground:getHeight()
 	love.graphics.draw(World_view.images.ground, 0, h / 2, 0, xFactor, yFactor)
 
 	player, walls, enemies, switches = worldModel:getObjects()
