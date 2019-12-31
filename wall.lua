@@ -13,21 +13,16 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-function createWall(x, y, direction)
+function createWall(pos, direction)
 	w = {}
-	w.x1 = x
-	w.y1 = y
+	w.p1 = pos
 
 	if direction == "n" or direction == "s" then
-		w.x2 = x + 1
-		w.y2 = y
-		w.cx = x + 0.5
-		w.cy = y
+		w.p2 = pos + Vec2D.new(1, 0)
+		w.center = pos + Vec2D.new(0.5, 0)
 	elseif direction == "w" or direction == "e" then
-		w.x2 = x
-		w.y2 = y + 1
-		w.cx = x
-		w.cy = y + 0.5
+		w.p2 = pos + Vec2D.new(0, 1)
+		w.center = pos + Vec2D.new(0, 0.5)
 	end
 
 	w.height = 1.4

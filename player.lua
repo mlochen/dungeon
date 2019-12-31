@@ -13,6 +13,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+require("vec2D")
+
 Player = {}
 
 Player.a = math.pi / 2
@@ -31,41 +33,34 @@ Player.sounds = {
 	steps = love.audio.newSource("sounds/steps.ogg", 'static')
 }
 
-function Player:new(x, y, worldModel)
+function Player:new(pos, worldModel)
 	o = {}
 	setmetatable(o, self)
 	self.__index = self
-	o.x = x
-	o.y = y
+	o.pos = pos
 	o.worldModel = worldModel
 	return o
 end
 
 function Player:update(dt, mouseDelta)
-	local vx, vy = 0, 0
+	local move = Vec2D.new(0, 0)
 	if love.keyboard.isDown("up") then
-		vx = vx + 1
+		move = move + Vec2D.new(1, 0)
 	end
 	if love.keyboard.isDown("down") then
-		vx = vx - 1
+		move = move + Vec2D.new(-1, 0)
 	end
 	if love.keyboard.isDown("left") then
-		vy = vy - 1
+		move = move + Vec2D.new(0, -1)
 	end
 	if love.keyboard.isDown("right") then
-		vy = vy + 1
+		move = move + Vec2D.new(0, 1)
 	end
-	local vLen = math.sqrt(vx^2 + vy^2)
-	if vLen ~= 0 then
-		vx = vx / vLen
-		vy = vy / vLen
-	end
-	local mx = math.cos(self.a) * vx - math.sin(self.a) * vy
-	local my = math.sin(self.a) * vx + math.cos(self.a) * vy
-	self.x = self.x + mx * (self.speed * dt)
-	self.y = self.y + my * (self.speed * dt)
+	move = Vec2D.normalize(move)
+	move = Vec2D.rotate(move, self.a)
+	self.pos = self.pos + Vec2D.mul(move, self.speed * dt)
 
-	if vx == 0 and vy == 0 then
+	if move.x == 0 and move.y == 0 then
 		self.sounds.steps:stop()
 	else
 		self.sounds.steps:play()
@@ -96,7 +91,7 @@ function Player:fire()
 		self.sounds.shot:stop()
 		self.sounds.shot:play()
 
-		-- check target
+		--worldModel:fire(self.pos, self.dir)
 	end
 end
 

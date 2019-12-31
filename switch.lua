@@ -23,12 +23,11 @@ Switch.sounds = {
 	push = love.audio.newSource("sounds/switch.ogg", 'static')
 }
 
-function Switch:new(x, y)
+function Switch:new(pos)
 	s = {}
 	setmetatable(s, self)
 	self.__index = self
-	s.x = x
-	s.y = y
+	s.pos = pos
 	return s
 end
 
@@ -47,8 +46,8 @@ function Switch:update(dt, player)
 		end
 	end
 
-	if math.floor(player.x) == self.x and
-	   math.floor(player.y) == self.y and
+	if math.floor(player.pos.x) == self.pos.x and
+	   math.floor(player.pos.y) == self.pos.y and
 	   self.active == true and
 	   self.pushed == false then
 		self.sounds.push:play()

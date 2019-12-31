@@ -16,6 +16,7 @@
 require("enemy")
 require("wall")
 require("switch")
+require("vec2D")
 
 World_model = {}
 
@@ -46,17 +47,17 @@ function World_model:init(level)
 
 			if c1 ~= "#" and c2 == "#" then
 				local wallID = (x * 2^16) + (y * 2^8) + 0
-				self.walls[wallID] = createWall(x + 1, y, "w")
+				self.walls[wallID] = createWall(Vec2D.new(x + 1, y), "w")
 			elseif c1 == "#" and c2 ~= "#" then
 				local wallID = (x * 2^16) + (y * 2^8) + 1
-				self.walls[wallID] = createWall(x + 1, y, "e")
+				self.walls[wallID] = createWall(Vec2D.new(x + 1, y), "e")
 			end
 			if c1 ~= "#" and c3 == "#" then
 				local wallID = (x * 2^16) + (y * 2^8) + 2
-				self.walls[wallID] = createWall(x, y + 1, "n")
+				self.walls[wallID] = createWall(Vec2D.new(x, y + 1), "n")
 			elseif c1 == "#" and c3 ~= "#" then
 				local wallID = (x * 2^16) + (y * 2^8) + 3
-				self.walls[wallID] = createWall(x, y + 1, "s")
+				self.walls[wallID] = createWall(Vec2D.new(x, y + 1), "s")
 			end
 		end
 	end
@@ -68,16 +69,16 @@ function World_model:init(level)
 			local c = string.sub(worldString, i + 1, i + 1)
 
 			if c == "p" then
-				self.player = Player:new(x + 0.5, y + 0.5)
+				self.player = Player:new(Vec2D.new(x + 0.5, y + 0.5))
 			elseif c == "e" then
-				table.insert(self.enemies, Enemy:new(x + 0.5, y + 0.5))
+				table.insert(self.enemies, Enemy:new(Vec2D.new(x + 0.5, y + 0.5)))
 			elseif c == "s" then
-				local switch = Switch:new(x, y)
+				local switch = Switch:new(Vec2D.new(x, y))
 				switch.type = "s"
 				switch.active = true
 				table.insert(self.switches, switch)
 			elseif c == "g" then
-				local switch = Switch:new(x, y)
+				local switch = Switch:new(Vec2D.new(x, y))
 				switch.type = "g"
 				switch.original_color = {r = 0, g = 0, b = 1}
 				table.insert(self.switches, switch)
@@ -90,14 +91,14 @@ end
 
 function World_model:update(dt, mouseDelta)
 	self.player:update(dt, mouseDelta)
-	local px = math.floor(self.player.x)
-	local py = math.floor(self.player.y)
+	local px = math.floor(self.player.pos.x)
+	local py = math.floor(self.player.pos.y)
 	for wx = px - 1, px + 1 do
 		for wy = py - 1, py + 1 do
 			for wf = 0, 3 do
 				wallID = (wx * 2^16) + (wy * 2^8) + wf
 				if self.walls[wallID] ~= nil then
-					self.player.x, self.player.y = World_model.wallCollision(self.player, self.walls[wallID])
+					self.player.pos.x, self.player.pos.y = World_model.wallCollision(self.player, self.walls[wallID])
 				end
 			end
 		end
@@ -131,17 +132,17 @@ function World_model.wallCollision(character, wall)
 	local wallFaceDist = 0
 	local parallelOffset = 0
 	if wall.face == "n" then
-		wallFaceDist = wall.cy - character.y
-		parallelOffset = wall.cx - character.x
+		wallFaceDist = wall.center.y - character.pos.y
+		parallelOffset = wall.center.x - character.pos.x
 	elseif wall.face == "s" then
-		wallFaceDist = character.y - wall.cy
-		parallelOffset = character.x - wall.cx
+		wallFaceDist = character.pos.y - wall.center.y
+		parallelOffset = character.pos.x - wall.center.x
 	elseif wall.face == "w" then
-		wallFaceDist = wall.cx - character.x
-		parallelOffset = character.y - wall.cy
+		wallFaceDist = wall.center.x - character.pos.x
+		parallelOffset = character.pos.y - wall.center.y
 	elseif wall.face == "e" then
-		wallFaceDist = character.x - wall.cx
-		parallelOffset = wall.cy - character.y
+		wallFaceDist = character.pos.x - wall.center.x
+		parallelOffset = wall.center.y - character.pos.y
 	end
 
 	local xCorr, yCorr = 0, 0
@@ -167,7 +168,7 @@ function World_model.wallCollision(character, wall)
 		end
 	end
 
-	local pxn, pyn = character.x, character.y
+	local pxn, pyn = character.pos.x, character.pos.y
 	if wall.face == "n" then
 		pxn = pxn - xCorr
 		pyn = pyn - yCorr

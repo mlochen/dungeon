@@ -15,8 +15,6 @@
 
 Enemy = {}
 
-Enemy.x = 0
-Enemy.y = 0
 Enemy.height = 1.5
 Enemy.radius = 0.3
 Enemy.speed = 1
@@ -40,12 +38,11 @@ Enemy.sounds = {
 Enemy.imageWidth = 100
 Enemy.imageHeight = 200
 
-function Enemy:new(x, y, world)
+function Enemy:new(pos, world)
 	e = {}
 	setmetatable(e, self)
 	self.__index = self
-	e.x = x
-	e.y = y
+	e.pos = pos
 	e.world = world
 	return e
 end
