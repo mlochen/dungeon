@@ -16,12 +16,12 @@ function love.load()
 
 	local worldWidth = 16
 	local worldString = "################\z
-						 # p            #\z
+						 # p        s   #\z
 						 #              #\z
 						 #    #         #\z
 						 #  ###         #\z
-						 #          s   #\z
-						 #              #\z
+						 #    s     s   #\z
+						 #             g#\z
 						 ################"
 
 	worldModel = World_model:new()

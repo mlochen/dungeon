@@ -1,32 +1,43 @@
 Switch = {}
 
-Switch.x = 0
-Switch.y = 0
-Switch.cx = 0
-Switch.cy = 0
 Switch.active = false
-Switch.color = 0xf00
+Switch.pushed = false
+Switch.original_color = {r = 1, g = 0, b = 0}
+Switch.color = {r = 1, g = 0, b = 0}
+Switch.sounds = {
+	push = love.audio.newSource("sounds/switch.ogg", 'static')
+}
 
-function Switch:new()
+function Switch:new(x, y)
 	s = {}
 	setmetatable(s, self)
+	self.__index = self
+	s.x = x
+	s.y = y
 	return s
 end
 
 function Switch:update(dt, player)
-	if math.floor(player.x) == self.x and
-	   math.floor(player.y) == self.y then
-		self.active = true
+	if self.active == false then
+		self.color = {r = 0.5, g = 0.5, b = 0.5}
+	else
+		if self.pushed == true then
+			self.color = self.original_color
+		else
+			local factor = (math.sin(love.timer.getTime() * 10) + 1) / 2
+			local r = self.original_color.r * factor
+			local g = self.original_color.g * factor
+			local b = self.original_color.b * factor
+			self.color = {r = r, g = g, b = b}
+		end
 	end
-end
 
-function Switch:draw(world)
-	local x1, y1 = world:project(self.x, self.y)
-	local x2, y2 = world:project(self.x + 1, self.y)
-	local x3, y3 = world:project(self.x + 1, self.y + 1)
-	local x4, y4 = world:project(self.x, self.y + 1)
-
-	love.graphics.setColor(r, g, b)
-	love.graphics.polygon('fill', x1, y1, x2, y2, x3, y3, x4, y4)
+	if math.floor(player.x) == self.x and
+	   math.floor(player.y) == self.y and
+	   self.active == true and
+	   self.pushed == false then
+		self.sounds.push:play()
+		self.pushed = true
+	end
 end
 

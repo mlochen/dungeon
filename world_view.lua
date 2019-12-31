@@ -16,8 +16,19 @@ function World_view.draw(w, h, player, worldModel)
 	local yFactor = h / 2 / World_view.images.floor:getHeight()
 	love.graphics.draw(World_view.images.floor, 0, h / 2, 0, xFactor, yFactor)
 
-	-- draw walls, enemies and switches
-	obj = worldModel:getObjectsInFOV(player.x, player.y, player.a, player.fov)
+	obj, sw = worldModel:getObjectsInFOV(player.x, player.y, player.a, player.fov)
+
+	-- draw switches
+	for _, switch in pairs(sw) do
+		local x1, y1 = World_view.project(player, switch.x, switch.y, w, h)
+		local x2, y2 = World_view.project(player, switch.x + 1, switch.y, w, h)
+		local x3, y3 = World_view.project(player, switch.x + 1, switch.y + 1, w, h)
+		local x4, y4 = World_view.project(player, switch.x, switch.y + 1, w, h)
+		love.graphics.setColor(World_view.adjustColorForDist(switch.color, switch.dist))
+		love.graphics.polygon('fill', x1, y1, x2, y2, x3, y3, x4, y4)
+	end
+
+	-- draw walls, enemies
 	for i = 1, #obj do
 		if obj[i].type == "w" then
 			o = obj[i]
@@ -25,7 +36,7 @@ function World_view.draw(w, h, player, worldModel)
 			local x2, y2 = World_view.project(player, o.x2, o.y2, w, h)
 
 			love.graphics.setColor(World_view.adjustColorForDist(o.color, o.dist))
-			love.graphics.polygon('fill', x1, y1, x1, y1 - 10, x2, y2 - 10, x2, y2)
+			love.graphics.polygon('fill', x1, y1, x1, y1 - (y1 - h / 2) / 2, x2, y2 - (y2 - h / 2) / 2, x2, y2)
 		end
 		if obj[i].type == "e" then
 			o = obj[i]
@@ -49,6 +60,7 @@ function World_view.draw(w, h, player, worldModel)
 	-- draw hud
 	love.graphics.setColor(1, 1, 1)
 	love.graphics.print("Number of objects: " .. #obj .. "\n\z
+						 Number of switches: " .. #sw .. "\n\z
 	                     Position: " .. player.x .. ", " .. player.y .. "\n", 10, 10)
 end
 
