@@ -69,9 +69,9 @@ function World_model:init(level)
 			local c = string.sub(worldString, i + 1, i + 1)
 
 			if c == "p" then
-				self.player = Player:new(Vec2D.new(x + 0.5, y + 0.5))
+				self.player = Player:new(Vec2D.new(x + 0.5, y + 0.5), self)
 			elseif c == "e" then
-				table.insert(self.enemies, Enemy:new(Vec2D.new(x + 0.5, y + 0.5)))
+				table.insert(self.enemies, Enemy:new(Vec2D.new(x + 0.5, y + 0.5), self))
 			elseif c == "s" then
 				local switch = Switch:new(Vec2D.new(x, y))
 				switch.type = "s"
@@ -126,6 +126,38 @@ end
 
 function World_model:getObjects()
 	return self.player, self.walls, self.enemies, self.switches
+end
+
+function World_model:getTarget(sv, v)
+	local obj = {}
+
+	local v1 = Vec2D.rotateByVec(player.pos - sv, v)
+	if v1.x > 0.1 and math.abs(v1.y) < player.radius then
+		player.dist = Vec2D.getDistance(sv, player.pos)
+		table.insert(obj, player)
+	end
+
+	for _, wall in pairs(self.walls) do
+		local v1 = Vec2D.rotateByVec(wall.p1 - sv, v)
+		local v2 = Vec2D.rotateByVec(wall.p2 - sv, v)
+		if v1.x > 0 and v2.x > 0 and v1.y * v2.y < 0 then
+			wall.dist = Vec2D.getDistance(sv, wall.center)
+			table.insert(obj, wall)
+		end
+	end
+
+	for _, enemy in pairs(self.enemies) do
+		if enemy.alive == true then
+			local v1 = Vec2D.rotateByVec(enemy.pos - sv, v)
+			if v1.x > 0.1 and math.abs(v1.y) < enemy.radius then
+				enemy.dist = Vec2D.getDistance(sv, enemy.pos)
+				table.insert(obj, enemy)
+			end
+		end
+	end
+
+	table.sort(obj, function(o1, o2) return o1.dist < o2.dist end)
+	return obj[1], #obj
 end
 
 function World_model.wallCollision(character, wall)

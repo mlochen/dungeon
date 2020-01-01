@@ -54,7 +54,7 @@ end
 function Vec2D.normalize(v)
 	local length = Vec2D.getLength(v)
 	if (length == 0) then
-		return v
+		return Vec2D.new(v.x, v.y)
 	else
 		return Vec2D.new(v.x / length, v.y / length)
 	end
@@ -77,11 +77,9 @@ function Vec2D.sideOf(v1, v2)
 	return v1.x * v2.y - v1.y * v2.x
 end
 
--- returns the shortest distance from the point v2 is pointing at to v1
--- i.e. the length of a normal vector on v1 pointing at v2
-function Vec2D.distFromVec(v1, v2)
-	local length = Vec2D.getLength(v1)
-	return math.abs((v2.x * v1.y - v1.x * v2.y) / (v1.x ^ 2 + v1.y ^ 2) * length)
+-- returns v2 rotated by the angle of v1
+function Vec2D.rotateByVec(v1, v2)
+	return Vec2D.rotate(v1, -Vec2D.getAngle(v2))
 end
 
 -- returns the distance between the two points pointed at by v1 and v2
@@ -97,11 +95,14 @@ end
 -- returns the angle the vector is pointing at (in radians)
 -- the vector (1, 0) has an angle of 0 and (0, 1) of pi / 2
 function Vec2D.getAngle(v)
-	if (v.y == 0) then
-		return 0
-	else
-		return math.atan(v.x / v.y)
+	local a = math.pi / 2
+	if (v.x ~= 0) then
+		a = math.atan(v.y / v.x)
 	end
+	if v.x < 0 then
+		a = math.pi + a
+	end
+	return a
 end
 
 -- returns a rotated a vector

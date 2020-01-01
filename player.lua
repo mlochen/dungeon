@@ -27,6 +27,7 @@ Player.reloadStart = 0
 Player.reloadDuration = 1
 Player.mouseSensitivity = 0.2
 Player.bullets = 8
+Player.type = "p"
 Player.sounds = {
 	reload = love.audio.newSource("sounds/reload.ogg", 'static'),
 	shot = love.audio.newSource("sounds/shot.ogg", 'static'),
@@ -76,9 +77,9 @@ function Player:update(dt, mouseDelta)
 	end
 end
 
-function Player:recDamage(d)
+function Player:recDamage(damage)
 	if self.alive == true then
-		self.health = self.health - d
+		self.health = self.health - damage
 		if self.health <= 0 then
 			self.alive = false
 		end
@@ -91,7 +92,11 @@ function Player:fire()
 		self.sounds.shot:stop()
 		self.sounds.shot:play()
 
-		--worldModel:fire(self.pos, self.dir)
+		local direction = Vec2D.rotate(Vec2D.new(1, 0), self.a)
+		local target = worldModel:getTarget(self.pos, direction)
+		if target ~= nil and target.type == "e" then
+			target:recDamage(50)
+		end
 	end
 end
 

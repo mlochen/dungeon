@@ -21,7 +21,7 @@ World_view.images = {
 	bullet = love.graphics.newImage("images/bullet.png")
 }
 
-function World_view.draw(w, h, player, worldModel)
+function World_view.draw(w, h, worldModel)
 	-- draw sky and ground
 	local xScaling = w / (World_view.images.sky:getWidth() * World_view.fov / (math.pi * 2))
 	local drawWidth = World_view.images.sky:getWidth() * xScaling
@@ -50,9 +50,9 @@ function World_view.draw(w, h, player, worldModel)
 	for _, o in pairs(objects) do
 		if o.type == "w" then
 			local x1, y1 = World_view.project(player, o.p1, w, h)
-			local y2 = y1 - (y1 - (h / 2)) * 1.5
+			local y2 = y1 - (y1 - (h / 2)) * 1.3
 			local x3, y3 = World_view.project(player, o.p2, w, h)
-			local y4 = y3 - (y3 - (h / 2)) * 1.5
+			local y4 = y3 - (y3 - (h / 2)) * 1.3
 			love.graphics.setColor(World_view.adjustColorForDist(o.color, o.dist))
 			love.graphics.polygon('fill', x1, y1, x1, y2, x3, y4, x3, y3)
 		end
@@ -60,7 +60,7 @@ function World_view.draw(w, h, player, worldModel)
 			local x, y = World_view.project(player, o.pos, w, h)
 			local imageWidth = o.sprite:getWidth()
 			local imageHeight = o.sprite:getHeight()
-			local drawHeight = (y - (h / 2)) * 1.4
+			local drawHeight = (y - (h / 2)) * 1.2
 			local scaleFactor = drawHeight / imageHeight
 			local drawWidth = imageWidth * scaleFactor
 			love.graphics.setColor(World_view.adjustColorForDist({r = 1, g = 1, b = 1}, o.dist))
@@ -87,11 +87,18 @@ function World_view.draw(w, h, player, worldModel)
 		bullet_x = bullet_x - 30
 	end
 
+	local t, nt = worldModel:getTarget(enemies[1].pos, player.pos - enemies[1].pos)
+	local target = "nil"
+	if t ~= nil then
+		target = t.type
+	end
+
 	-- draw debug info
 	love.graphics.setColor(1, 1, 1)
 	love.graphics.print("Number of objects: " .. #objects .. "\n\z
 						 Number of switches: " .. #switches .. "\n\z
 	                     Position: " .. Vec2D.tostring(player.pos) .. "\n\z
+						 Target: " .. target .. ", " .. nt .. "\n\z
 						 FPS: " .. love.timer.getFPS(), 10, 10)
 end
 

@@ -73,7 +73,7 @@ end
 function love.draw()
 	local w = love.graphics.getWidth()
 	local h = love.graphics.getHeight()
-	World_view.draw(w, h, player, worldModel)
+	World_view.draw(w, h, worldModel)
 end
 
 function love.mousemoved(x, y, dx, dy)
