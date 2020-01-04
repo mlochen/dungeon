@@ -17,8 +17,8 @@ Switch = {}
 
 Switch.active = false
 Switch.pushed = false
-Switch.original_color = {r = 1, g = 0, b = 0}
-Switch.color = {r = 1, g = 0, b = 0}
+Switch.original_color = {r = 0.5, g = 0, b = 0}
+Switch.color = {r = 0.5, g = 0, b = 0}
 Switch.sounds = {
 	push = love.audio.newSource("sounds/switch.ogg", 'static')
 }
@@ -33,7 +33,7 @@ end
 
 function Switch:update(dt, player)
 	if self.active == false then
-		self.color = {r = 0.5, g = 0.5, b = 0.5}
+		self.color = {r = 0.3, g = 0.3, b = 0.3}
 	else
 		if self.pushed == true then
 			self.color = self.original_color

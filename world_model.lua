@@ -80,7 +80,7 @@ function World_model:init(level)
 			elseif c == "g" then
 				local switch = Switch:new(Vec2D.new(x, y))
 				switch.type = "g"
-				switch.original_color = {r = 0, g = 0, b = 1}
+				switch.original_color = {r = 0, g = 0, b = 0.5}
 				table.insert(self.switches, switch)
 			end
 		end

@@ -33,8 +33,8 @@ function World_view.draw(w, h, worldModel)
 	local yFactor = (h / 2) / World_view.images.ground:getHeight()
 	love.graphics.draw(World_view.images.ground, 0, h / 2, 0, xFactor, yFactor)
 
-	player, walls, enemies, switches = worldModel:getObjects()
-	objects, switches = World_view.getObjectsInFOV(player, walls, enemies, switches)
+	local player, walls, enemies, switches = worldModel:getObjects()
+	local objects, switches = World_view.getObjectsInFOV(player, walls, enemies, switches)
 
 	-- draw switches
 	for _, switch in pairs(switches) do
@@ -50,9 +50,9 @@ function World_view.draw(w, h, worldModel)
 	for _, o in pairs(objects) do
 		if o.type == "w" then
 			local x1, y1 = World_view.project(player, o.p1, w, h)
-			local y2 = y1 - (y1 - (h / 2)) * 1.3
+			local y2 = y1 - (y1 - (h / 2)) * 1.4
 			local x3, y3 = World_view.project(player, o.p2, w, h)
-			local y4 = y3 - (y3 - (h / 2)) * 1.3
+			local y4 = y3 - (y3 - (h / 2)) * 1.4
 			love.graphics.setColor(World_view.adjustColorForDist(o.color, o.dist))
 			love.graphics.polygon('fill', x1, y1, x1, y2, x3, y4, x3, y3)
 		end
@@ -60,7 +60,7 @@ function World_view.draw(w, h, worldModel)
 			local x, y = World_view.project(player, o.pos, w, h)
 			local imageWidth = o.sprite:getWidth()
 			local imageHeight = o.sprite:getHeight()
-			local drawHeight = (y - (h / 2)) * 1.2
+			local drawHeight = (y - (h / 2)) * 1.5
 			local scaleFactor = drawHeight / imageHeight
 			local drawWidth = imageWidth * scaleFactor
 			love.graphics.setColor(World_view.adjustColorForDist({r = 1, g = 1, b = 1}, o.dist))
@@ -114,7 +114,15 @@ function World_view.getObjectsInFOV(player, walls, enemies, switches)
 	end
 
 	for _, enemy in pairs(enemies) do
-		if World_view.pointInFOV(player, enemy.pos) then
+		local poDir = enemy.pos - player.pos
+		local v1 = Vec2D.rotate(Vec2D.new(1, 0), player.a + World_view.fov / 2)
+		local v2 = Vec2D.rotate(Vec2D.new(1, 0), player.a - World_view.fov / 2)
+		local infov = Vec2D.sideOf(poDir, v1) > 0 and Vec2D.sideOf(poDir, v2) < 0
+		v1 = Vec2D.rotateByVec(poDir, v1)
+		v2 = Vec2D.rotateByVec(poDir, v2)
+		if infov == true or
+		   (v1.x > 0.1 and math.abs(v1.y) < enemy.radius) or
+		   (v2.x > 0.1 and math.abs(v2.y) < enemy.radius) then
 			enemy.dist = Vec2D.getDistance(player.pos, enemy.pos)
 			table.insert(objects, enemy)
 		end
@@ -136,27 +144,24 @@ function World_view.getObjectsInFOV(player, walls, enemies, switches)
 end
 
 function World_view.pointInFOV(player, point)
-	poDir = point - player.pos
-	v1 = Vec2D.rotate(Vec2D.new(1, 0), player.a + World_view.fov / 2)
-	v2 = Vec2D.rotate(Vec2D.new(1, 0), player.a - World_view.fov / 2)
+	local poDir = point - player.pos
+	local v1 = Vec2D.rotate(Vec2D.new(1, 0), player.a + World_view.fov / 2)
+	local v2 = Vec2D.rotate(Vec2D.new(1, 0), player.a - World_view.fov / 2)
 	return Vec2D.sideOf(poDir, v1) > 0 and Vec2D.sideOf(poDir, v2) < 0
 end
 
 function World_view.project(player, point, w, h)
-	plDir = Vec2D.new(math.cos(player.a), math.sin(player.a))
-	poDir = Vec2D.normalize(point - player.pos)
-
-	local angleH = math.acos(Vec2D.dotProduct(plDir, poDir))
-
-	local d = 0
+	local plDir = Vec2D.new(math.cos(player.a), math.sin(player.a))
+	local poDir = Vec2D.normalize(point - player.pos)
+	local d = 1
 	if Vec2D.sideOf(plDir, poDir) < 0 then
 		d = -1
-	else
-		d = 1
 	end
 
+	local angleH = math.acos(Vec2D.dotProduct(plDir, poDir))
 	local angleV = math.atan(1 / Vec2D.getDistance(player.pos, point))
-	local pixels_per_deg = w / World_view.fov 
+
+	local pixels_per_deg = w / World_view.fov
 	local pixels_x = (w / 2) + pixels_per_deg * angleH * d
 	local pixels_y = (h / 2) + pixels_per_deg * angleV
 	return pixels_x, pixels_y
@@ -164,8 +169,8 @@ end
 
 function World_view.adjustColorForDist(color, dist)
 	local f = 0
-	if dist <= 50 then
-		f = (50 - dist) / 50
+	if dist <= 20 then
+		f = (20 - dist) / 20
 	end
 	return color.r * f, color.g * f, color.b * f
 end
