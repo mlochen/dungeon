@@ -13,10 +13,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-require("player")
-require("vec2D")
-require("world_model")
-
 Enemy = {}
 Enemy.height = 1.5
 Enemy.radius = 0.3

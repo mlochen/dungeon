@@ -13,9 +13,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-require("vec2D")
-require("world_model")
-
 Player = {}
 Player.a = math.pi / 2
 Player.radius = 0.3
