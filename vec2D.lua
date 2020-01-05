@@ -50,11 +50,11 @@ function Vec2D.new(x, y)
     return v
 end
 
--- normalizes a vector, if v has length 0 it returns itself
+-- normalizes a vector, if v has length 0 it returns a zero vector
 function Vec2D.normalize(v)
     local length = Vec2D.getLength(v)
     if (length == 0) then
-        return Vec2D.new(v.x, v.y)
+        return Vec2D.new(0, 0)
     else
         return Vec2D.new(v.x / length, v.y / length)
     end
@@ -105,7 +105,7 @@ function Vec2D.getAngle(v)
     return a
 end
 
--- returns a rotated a vector
+-- returns a vector rotated by angle a
 function Vec2D.rotate(v, a)
     local x = math.cos(a) * v.x - math.sin(a) * v.y
     local y = math.sin(a) * v.x + math.cos(a) * v.y

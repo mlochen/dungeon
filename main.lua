@@ -22,7 +22,7 @@ worldModel = nil
 mouseDelta = 0
 levelIndex = 1
 levels = {
---[[    -- level 1
+    -- level 1
     {worldWidth = 9,
      worldString = "#########\z
                     ####p####\z
@@ -40,19 +40,20 @@ levels = {
     {worldWidth = 15,
      worldString = "###############\z
                     #   #         #\z
-                    # #   ####### #\z
+                    # #  e####### #\z
                     #s# ###  s#   #\z
                     ###   # ### ###\z
                     #   #   #p#   #\z
                     # ### # # # # #\z
-                    #   #       # #\z
+                    #  e#       # #\z
                     ### ## # #### #\z
-                    #      # #g#  #\z
+                    #      # #g#e #\z
                     ### #### # ## #\z
                     #s       #    #\z
                     ###############"},
-
-                    ]]    {worldWidth = 20, worldString = "####################\z
+    -- level 3
+    {worldWidth = 20,
+     worldString = "####################\z
                     #p#                #\z
                     # # ####### ###### #\z
                     # # # #s    #  e   #\z
@@ -71,25 +72,7 @@ levels = {
                     # g #      #s#     #\z
                     #   ###### ####### #\z
                     #    e            e#\z
-                    ####################"},
-    {worldString = "#########\z
-                    # p     #\z
-                    #      s#\z
-                    #       #\z
-                    #  ###  #\z
-                    #   g   #\z
-                    #e      #\z
-                    #########",
-     worldWidth = 9},
-    {worldString = "################\z
-                    # p        s   #\z
-                    #              #\z
-                    #    #     e   #\z
-                    #  ###         #\z
-                    #    s     s   #\z
-                    #              #\z
-                    ################",
-     worldWidth = 16}
+                    ####################"}
 }
 
 function love.load()
@@ -105,15 +88,7 @@ function love.load()
 end
 
 function love.update(dt)
-    if love.window.hasFocus() then
-        if (worldModel:levelFinished() == true) then
-            if (levelIndex == #levels) then
-                --os.exit()
-            end
-            levelIndex = levelIndex + 1
-            worldModel = World_model.new()
-            player = worldModel:init(levels[levelIndex])
-        end
+    if love.window.hasFocus() and worldModel:getState() == "running" then
         worldModel:update(dt, mouseDelta)
     end
     mouseDelta = 0
@@ -122,7 +97,8 @@ end
 function love.draw()
     local w = love.graphics.getWidth()
     local h = love.graphics.getHeight()
-    World_view.draw(w, h, worldModel)
+    local lastLevel = levelIndex == #levels
+    World_view.draw(w, h, worldModel, lastLevel)
 end
 
 function love.mousemoved(x, y, dx, dy)
@@ -138,7 +114,25 @@ function love.mousepressed(x, y, button, istouch)
 end
 
 function love.keypressed(key, scancode, isrepeat)
-    if key == "tab" then
+    if key == "space" then
+        if worldModel:getState() == "levelComplete" then
+            if levelIndex < #levels then
+                local health = player.health
+                levelIndex = levelIndex + 1
+                worldModel = World_model.new()
+                player = worldModel:init(levels[levelIndex])
+                player.health = health
+            else
+                levelIndex = 1
+                worldModel = World_model.new()
+                player = worldModel:init(levels[levelIndex])
+            end
+        elseif worldModel:getState() == "gameOver" then
+            levelIndex = 1
+            worldModel = World_model.new()
+            player = worldModel:init(levels[levelIndex])
+        end
+    elseif key == "tab" then
         local state = not love.mouse.isGrabbed()
         love.mouse.setGrabbed(state)
         love.mouse.setRelativeMode(state)

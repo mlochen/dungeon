@@ -251,12 +251,19 @@ function World_model.wallCollision(character, wall)
     return Vec2D.new(pxn, pyn)
 end
 
-function World_model:levelFinished()
-    local levelFinished = false
+function World_model:getState()
+    local levelComplete = false
     for _, switch in pairs(self.switches) do
         if (switch.type == "g" and switch.pushed == true) then
-            levelFinished = true
+            levelComplete = true
         end
     end
-    return levelFinished
+
+    if self.player.health <= 0 then
+        return "gameOver"
+    elseif levelComplete == true then
+        return "levelComplete"
+    else
+        return "running"
+    end
 end

@@ -26,8 +26,13 @@ World_view.images = {
     ground = love.graphics.newImage("images/ground.png"),
     bullet = love.graphics.newImage("images/bullet.png")
 }
+endscreen = {
+    gameOver = love.graphics.newImage("images/gameover.png"),
+    levelComplete = love.graphics.newImage("images/levelcomplete.png"),
+    theEnd = love.graphics.newImage("images/theend.png")
+}
 
-function World_view.draw(w, h, worldModel)
+function World_view.draw(w, h, worldModel, lastLevel)
     -- draw sky and ground
     local xScaling = w / (World_view.images.sky:getWidth() * World_view.fov / (math.pi * 2))
     local drawWidth = World_view.images.sky:getWidth() * xScaling
@@ -95,10 +100,30 @@ function World_view.draw(w, h, worldModel)
 
     -- draw debug info
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Number of objects: " .. #objects .. "\n\z
-                         Number of switches: " .. #switches .. "\n\z
-                         Position: " .. Vec2D.tostring(player.pos) .. "\n\z
-                         FPS: " .. love.timer.getFPS(), 10, 10)
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
+
+    -- draw overlay
+    if worldModel:getState() == "gameOver" then
+        love.graphics.setColor(1, 0, 0, 0.5)
+        love.graphics.rectangle('fill', 0, 0, w, h)
+        love.graphics.setColor(0, 0, 0)
+        local imagePosX = (w / 2) - (endscreen.gameOver:getWidth() / 2)
+        local imagePosY = (h / 2) - (endscreen.gameOver:getHeight() / 2)
+        love.graphics.draw(endscreen.gameOver, imagePosX, imagePosY)
+    elseif worldModel:getState() == "levelComplete" then
+        love.graphics.setColor(0, 1, 0, 0.5)
+        love.graphics.rectangle('fill', 0, 0, w, h)
+        love.graphics.setColor(0, 0, 0)
+        if lastLevel == true then
+            local imagePosX = (w / 2) - (endscreen.theEnd:getWidth() / 2)
+            local imagePosY = (h / 2) - (endscreen.theEnd:getHeight() / 2)
+            love.graphics.draw(endscreen.theEnd, imagePosX, imagePosY)
+        else
+            local imagePosX = (w / 2) - (endscreen.levelComplete:getWidth() / 2)
+            local imagePosY = (h / 2) - (endscreen.levelComplete:getHeight() / 2)
+            love.graphics.draw(endscreen.levelComplete, imagePosX, imagePosY)
+        end
+    end
 end
 
 function World_view.getObjectsInFOV(player, walls, enemies, switches)
