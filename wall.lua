@@ -14,30 +14,30 @@
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 function createWall(pos, direction)
-	w = {}
-	w.p1 = pos
+    local w = {}
+    w.p1 = pos
 
-	if direction == "n" or direction == "s" then
-		w.p2 = pos + Vec2D.new(1, 0)
-		w.center = pos + Vec2D.new(0.5, 0)
-	elseif direction == "w" or direction == "e" then
-		w.p2 = pos + Vec2D.new(0, 1)
-		w.center = pos + Vec2D.new(0, 0.5)
-	end
+    if direction == "n" or direction == "s" then
+        w.p2 = pos + Vec2D.new(1, 0)
+        w.center = pos + Vec2D.new(0.5, 0)
+    elseif direction == "w" or direction == "e" then
+        w.p2 = pos + Vec2D.new(0, 1)
+        w.center = pos + Vec2D.new(0, 0.5)
+    end
 
-	w.height = 1.4
-	w.face = direction
+    w.height = 1.4
+    w.face = direction
 
-	if direction == "n" then
-		w.color = {r = 0.3, g = 0.05, b = 0}
-	elseif direction == "w" then
-		w.color = {r = 0.4, g = 0.15, b = 0.02}
-	elseif direction == "e" then
-		w.color = {r = 0.35, g = 0.1, b = 0.01}
-	elseif direction == "s" then
-		w.color = {r = 0.45, g = 0.2, b = 0.03}
-	end
+    if direction == "n" then
+        w.color = {r = 0.3, g = 0.05, b = 0}
+    elseif direction == "w" then
+        w.color = {r = 0.4, g = 0.15, b = 0.02}
+    elseif direction == "e" then
+        w.color = {r = 0.35, g = 0.1, b = 0.01}
+    elseif direction == "s" then
+        w.color = {r = 0.45, g = 0.2, b = 0.03}
+    end
 
-	w.type = "w"
-	return w
+    w.type = "w"
+    return w
 end
