@@ -22,27 +22,56 @@ worldModel = nil
 mouseDelta = 0
 levelIndex = 1
 levels = {
-    {worldString =   "####################\z
-                #p#                #\z
-                # # ####### ###### #\z
-                # # # #s    #  e   #\z
-                #   # #     #  #####\z
-                # ### ####     #   #\z
-                # #e     #      e# #\z
-                # ###### #   ##### #\z
-                #            #e  # #\z
-                # ########         #\z
-                # #se      ####### #\z
-                # #####    #   e   #\z
-                #          # #######\z
-                # ######## #       #\z
-                # #  e   # #   e # #\z
-                ######## # # ##### #\z
-                # g #      #s#     #\z
-                #   ###### ####### #\z
-                #    e            e#\z
-                ####################",
-                worldWidth = 20},
+--[[    -- level 1
+    {worldWidth = 9,
+     worldString = "#########\z
+                    ####p####\z
+                    #### ####\z
+                    #       #\z
+                    #       #\z
+                    #  ###  #\z
+                    #   g   #\z
+                    #       #\z
+                    #       #\z
+                    ## # # ##\z
+                    ##s#s#s##\z
+                    #########"},
+    -- level 2
+    {worldWidth = 15,
+     worldString = "###############\z
+                    #   #         #\z
+                    # #   ####### #\z
+                    #s# ###  s#   #\z
+                    ###   # ### ###\z
+                    #   #   #p#   #\z
+                    # ### # # # # #\z
+                    #   #       # #\z
+                    ### ## # #### #\z
+                    #      # #g#  #\z
+                    ### #### # ## #\z
+                    #s       #    #\z
+                    ###############"},
+
+                    ]]    {worldWidth = 20, worldString = "####################\z
+                    #p#                #\z
+                    # # ####### ###### #\z
+                    # # # #s    #  e   #\z
+                    #   # #     #  #####\z
+                    # ### ####     #   #\z
+                    # #e     #      e# #\z
+                    # ###### #   ##### #\z
+                    #            #e  # #\z
+                    # ########         #\z
+                    # #se      ####### #\z
+                    # #####    #   e   #\z
+                    #          # #######\z
+                    # ######## #       #\z
+                    # #  e   # #   e # #\z
+                    ######## # # ##### #\z
+                    # g #      #s#     #\z
+                    #   ###### ####### #\z
+                    #    e            e#\z
+                    ####################"},
     {worldString = "#########\z
                     # p     #\z
                     #      s#\z
@@ -82,7 +111,6 @@ function love.update(dt)
                 --os.exit()
             end
             levelIndex = levelIndex + 1
-            print(levelIndex)
             worldModel = World_model.new()
             player = worldModel:init(levels[levelIndex])
         end

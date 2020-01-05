@@ -49,9 +49,8 @@ function Enemy:update(dt)
         -- move towards the player
         local direction = player.pos - self.pos
         local dist = Vec2D.getLength(direction)
-        --self.x = self.x + (x_delta / dist) * (self.speed * dt)
-        --self.y = self.y + (y_delta / dist) * (self.speed * dt)
-        --world.correctPosition(self)
+        local movement = Vec2D.mul(Vec2D.normalize(direction), self.speed * dt)
+        self.pos = self.pos + movement
 
         local target = worldModel:getTarget(self.pos, direction)
         if target ~= nil and target.type == "p" and dist <= self.attackDistance then

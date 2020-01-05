@@ -20,15 +20,14 @@ require("wall")
 require("vec2D")
 
 World_model = {}
-World_model.player = nil
-World_model.walls = {}
-World_model.enemies = {}
-World_model.switches = {}
 World_model.__index = World_model
 
 function World_model.new()
     local w = {}
     setmetatable(w, World_model)
+    w.walls = {}
+    w.enemies = {}
+    w.switches = {}
     return w
 end
 
@@ -90,24 +89,47 @@ function World_model:init(level)
 end
 
 function World_model:update(dt, mouseDelta)
+    -- update player
     self.player:update(dt, mouseDelta)
     local px = math.floor(self.player.pos.x)
     local py = math.floor(self.player.pos.y)
     for wx = px - 1, px + 1 do
         for wy = py - 1, py + 1 do
             for wf = 0, 3 do
-                wallID = (wx * 2^16) + (wy * 2^8) + wf
+                local wallID = (wx * 2^16) + (wy * 2^8) + wf
                 if self.walls[wallID] ~= nil then
-                    self.player.pos.x, self.player.pos.y = World_model.wallCollision(self.player, self.walls[wallID])
+                    self.player.pos = World_model.wallCollision(self.player, self.walls[wallID])
                 end
             end
         end
     end
 
+    -- update enemies
     for _, enemy in pairs(self.enemies) do
         enemy:update(dt)
+        if enemy.alive == true then
+            enemy.pos = World_model.characterCollision(enemy, player)
+            for _, otherEnemy in pairs(self.enemies) do
+                if enemy ~= otherEnemy then
+                    enemy.pos = World_model.characterCollision(enemy, otherEnemy)
+                end
+            end
+            local px = math.floor(enemy.pos.x)
+            local py = math.floor(enemy.pos.y)
+            for wx = px - 1, px + 1 do
+                for wy = py - 1, py + 1 do
+                    for wf = 0, 3 do
+                        local wallID = (wx * 2^16) + (wy * 2^8) + wf
+                        if self.walls[wallID] ~= nil then
+                            enemy.pos = World_model.wallCollision(enemy, self.walls[wallID])
+                        end
+                    end
+                end
+            end
+        end
     end
 
+    -- update switches
     local goalActive = true
     for _, switch in pairs(self.switches) do
         switch:update(dt, self.player)
@@ -158,6 +180,17 @@ function World_model:getTarget(sv, v)
 
     table.sort(obj, function(o1, o2) return o1.dist < o2.dist end)
     return obj[1]
+end
+
+function World_model.characterCollision(character, otherCharacter)
+    local minDist = character.radius + otherCharacter.radius
+    local diff = character.pos - otherCharacter.pos
+    local dist = Vec2D.getLength(diff)
+    if dist < minDist then
+        return otherCharacter.pos + Vec2D.mul(Vec2D.normalize(diff), minDist)
+    else
+        return character.pos
+    end
 end
 
 function World_model.wallCollision(character, wall)
@@ -215,7 +248,7 @@ function World_model.wallCollision(character, wall)
         pyn = pyn + xCorr
     end
 
-    return pxn, pyn
+    return Vec2D.new(pxn, pyn)
 end
 
 function World_model:levelFinished()
