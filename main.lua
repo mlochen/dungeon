@@ -1,4 +1,4 @@
--- Copyright (C) 2019 Marco Lochen
+-- Copyright (C) 2020 Marco Lochen
 
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,14 +77,11 @@ levels = {
 
 function love.load()
     love.window.setTitle("Dungeon")
-
     if love.mouse.isGrabbed() == false then
         love.mouse.setGrabbed(true)
         love.mouse.setRelativeMode(true)
     end
-
-    worldModel = World_model:new()
-    player = worldModel:init(levels[1])
+    worldModel, player = World_model.new(levels[1])
 end
 
 function love.update(dt)
@@ -119,18 +116,15 @@ function love.keypressed(key, scancode, isrepeat)
             if levelIndex < #levels then
                 local health = player.health
                 levelIndex = levelIndex + 1
-                worldModel = World_model.new()
-                player = worldModel:init(levels[levelIndex])
+                worldModel, player = World_model.new(levels[levelIndex])
                 player.health = health
             else
                 levelIndex = 1
-                worldModel = World_model.new()
-                player = worldModel:init(levels[levelIndex])
+                worldModel, player = World_model.new(levels[levelIndex])
             end
         elseif worldModel:getState() == "gameOver" then
             levelIndex = 1
-            worldModel = World_model.new()
-            player = worldModel:init(levels[levelIndex])
+            worldModel, player = World_model.new(levels[levelIndex])
         end
     elseif key == "tab" then
         local state = not love.mouse.isGrabbed()

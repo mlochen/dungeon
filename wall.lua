@@ -1,4 +1,4 @@
--- Copyright (C) 2019 Marco Lochen
+-- Copyright (C) 2020 Marco Lochen
 
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -15,29 +15,21 @@
 
 function createWall(pos, direction)
     local w = {}
-    w.p1 = pos
-
-    if direction == "n" or direction == "s" then
-        w.p2 = pos + Vec2D.new(1, 0)
-        w.center = pos + Vec2D.new(0.5, 0)
-    elseif direction == "w" or direction == "e" then
-        w.p2 = pos + Vec2D.new(0, 1)
-        w.center = pos + Vec2D.new(0, 0.5)
-    end
-
+    w.pos = pos
+    w.p1 = pos - Vec2D.mul(direction, 0.5)
+    w.p2 = pos + Vec2D.mul(direction, 0.5)
+    w.direction = direction
+    w.normal = Vec2D.rotate(direction, math.pi / 2)
     w.height = 1.4
-    w.face = direction
-
-    if direction == "n" then
-        w.color = {r = 0.3, g = 0.05, b = 0}
-    elseif direction == "w" then
-        w.color = {r = 0.4, g = 0.15, b = 0.02}
-    elseif direction == "e" then
-        w.color = {r = 0.35, g = 0.1, b = 0.01}
-    elseif direction == "s" then
-        w.color = {r = 0.45, g = 0.2, b = 0.03}
-    end
-
     w.type = "w"
+
+    local light = Vec2D.normalize(Vec2D.new(-3, -1))
+    local color = {r = 0.3, g = 0.15, b = 0.03}
+    local colorfactor = math.acos(Vec2D.dotProduct(light, direction)) / math.pi
+    w.color = {}
+    w.color.r = color.r * 0.25 + color.r * colorfactor * 0.75
+    w.color.g = color.g * 0.25 + color.g * colorfactor * 0.75
+    w.color.b = color.b * 0.25 + color.b * colorfactor * 0.75
+
     return w
 end

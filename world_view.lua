@@ -1,4 +1,4 @@
--- Copyright (C) 2019 Marco Lochen
+-- Copyright (C) 2020 Marco Lochen
 
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,9 +60,16 @@ function World_view.draw(w, h, worldModel, lastLevel)
     -- draw walls and enemies
     for _, o in pairs(objects) do
         if o.type == "w" then
-            local x1, y1 = World_view.project(player, o.p1, w, h)
+            local plDir = Vec2D.new(math.cos(player.a), math.sin(player.a))
+            local p1, p2 = o.p1, o.p2
+            local p1Angle = math.acos(Vec2D.dotProduct(plDir, Vec2D.normalize(o.p1 - player.pos)))
+            local p2Angle = math.acos(Vec2D.dotProduct(plDir, Vec2D.normalize(o.p2 - player.pos)))
+            if p1Angle > math.pi / 2 or p2Angle > math.pi / 2 then
+                p1, p2 = World_view.getCorrectedWall(player, o)
+            end
+            local x1, y1 = World_view.project(player, p1, w, h)
             local y2 = y1 - (y1 - (h / 2)) * 1.4
-            local x3, y3 = World_view.project(player, o.p2, w, h)
+            local x3, y3 = World_view.project(player, p2, w, h)
             local y4 = y3 - (y3 - (h / 2)) * 1.4
             love.graphics.setColor(World_view.adjustColorForDist(o.color, o.dist))
             love.graphics.polygon('fill', x1, y1, x1, y2, x3, y4, x3, y3)
@@ -130,9 +137,9 @@ function World_view.getObjectsInFOV(player, walls, enemies, switches)
     local objects = {}
     for _, wall in pairs(walls) do
         if World_view.pointInFOV(player, wall.p1) or
-           World_view.pointInFOV(player, wall.center) or
+           World_view.pointInFOV(player, wall.pos) or
            World_view.pointInFOV(player, wall.p2) then
-            wall.dist = Vec2D.getDistance(player.pos, wall.center)
+            wall.dist = Vec2D.getLength(player.pos - wall.pos)
             table.insert(objects, wall)
         end
     end
@@ -147,7 +154,7 @@ function World_view.getObjectsInFOV(player, walls, enemies, switches)
         if infov == true or
            (v1.x > 0.1 and math.abs(v1.y) < enemy.radius) or
            (v2.x > 0.1 and math.abs(v2.y) < enemy.radius) then
-            enemy.dist = Vec2D.getDistance(player.pos, enemy.pos)
+            enemy.dist = Vec2D.getLength(player.pos - enemy.pos)
             table.insert(objects, enemy)
         end
     end
@@ -158,7 +165,7 @@ function World_view.getObjectsInFOV(player, walls, enemies, switches)
            World_view.pointInFOV(player, switch.pos + Vec2D.new(1, 0)) or
            World_view.pointInFOV(player, switch.pos + Vec2D.new(0, 1)) or
            World_view.pointInFOV(player, switch.pos + Vec2D.new(1, 1)) then
-            switch.dist = Vec2D.getDistance(player.pos, switch.pos + Vec2D.new(0.5, 0.5))
+            switch.dist = Vec2D.getLength(player.pos - (switch.pos + Vec2D.new(0.5, 0.5)))
             table.insert(sw, switch)
         end
     end
@@ -183,11 +190,11 @@ function World_view.project(player, point, w, h)
     end
 
     local angleH = math.acos(Vec2D.dotProduct(plDir, poDir))
-    local angleV = math.atan(1 / Vec2D.getDistance(player.pos, point))
+    local angleV = 1 / (Vec2D.getLength(player.pos - point) * math.abs(math.cos(angleH)))
 
-    local pixelsPerDeg = w / World_view.fov
-    local pixelsX = (w / 2) + pixelsPerDeg * angleH * d
-    local pixelsY = (h / 2) + pixelsPerDeg * angleV
+    local maxHPixels = (w / 2) / math.tan(World_view.fov / 2)
+    local pixelsX = (w / 2) + maxHPixels * math.tan(angleH) * d
+    local pixelsY = (h / 2) + maxHPixels * angleV
     return pixelsX, pixelsY
 end
 
@@ -199,3 +206,33 @@ function World_view.adjustColorForDist(color, dist)
     return color.r * f, color.g * f, color.b * f
 end
 
+function World_view.getCorrectedWall(player, wall)
+    local v1 = Vec2D.rotate(Vec2D.new(1, 0), player.a + World_view.fov / 2)
+    local v2 = Vec2D.rotate(Vec2D.new(1, 0), player.a - World_view.fov / 2)
+    local v1ASum = math.acos(Vec2D.dotProduct(v1, Vec2D.normalize(wall.p1 - player.pos))) +
+                   math.acos(Vec2D.dotProduct(v1, Vec2D.normalize(wall.p2 - player.pos)))
+    local v2ASum = math.acos(Vec2D.dotProduct(v2, Vec2D.normalize(wall.p1 - player.pos))) +
+                   math.acos(Vec2D.dotProduct(v2, Vec2D.normalize(wall.p2 - player.pos)))
+    local v = nil
+    if v1ASum < v2ASum then
+        v = v1
+    else
+        v = v2
+    end
+
+    local inner, outer = nil, nil
+    if World_view.pointInFOV(player, wall.p1) then
+        inner = wall.p1 - player.pos
+        outer = wall.p2 - player.pos
+    else
+        inner = wall.p2 - player.pos
+        outer = wall.p1 - player.pos
+    end
+
+    local total = Vec2D.getLength(Vec2D.project(outer - inner, Vec2D.rotate(v, math.pi / 2)))
+    local section = Vec2D.getLength(Vec2D.project(outer, Vec2D.rotate(v, math.pi / 2)))
+    local innerOnV = Vec2D.project(inner, v)
+    local outerOnV = Vec2D.project(outer, v)
+
+    return player.pos + inner, player.pos + outerOnV + Vec2D.mul(innerOnV - outerOnV, section / total)
+end

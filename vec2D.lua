@@ -1,4 +1,4 @@
--- Copyright (C) 2019 Marco Lochen
+-- Copyright (C) 2020 Marco Lochen
 
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ function Vec2D.new(x, y)
     return v
 end
 
--- normalizes a vector, if v has length 0 it returns a zero vector
+-- normalizes a vector
 function Vec2D.normalize(v)
     local length = Vec2D.getLength(v)
     if (length == 0) then
@@ -82,11 +82,6 @@ function Vec2D.rotateByVec(v1, v2)
     return Vec2D.rotate(v1, -Vec2D.getAngle(v2))
 end
 
--- returns the distance between the two points pointed at by v1 and v2
-function Vec2D.getDistance(v1, v2)
-    return math.sqrt((v1.x - v2.x) ^ 2 + (v1.y - v2.y) ^ 2)
-end
-
 -- returns the length of a vector
 function Vec2D.getLength(v)
     return math.sqrt(v.x ^ 2 + v.y ^ 2)
@@ -112,3 +107,8 @@ function Vec2D.rotate(v, a)
     return Vec2D.new(x, y)
 end
 
+-- returns the projection of v1 on v2
+function Vec2D.project(v1, v2)
+    local f = Vec2D.dotProduct(v1, v2) / Vec2D.dotProduct(v2, v2)
+    return Vec2D.mul(v2, f)
+end

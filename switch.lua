@@ -1,4 +1,4 @@
--- Copyright (C) 2019 Marco Lochen
+-- Copyright (C) 2020 Marco Lochen
 
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,11 +22,19 @@ Switch.sounds = {
     push = love.audio.newSource("sounds/switch.ogg", 'static')
 }
 
-function Switch:new(pos)
+function Switch:new(pos, type)
     local s = {}
     setmetatable(s, self)
     self.__index = self
     s.pos = pos
+    s.type = type
+
+    if type == "s" then
+        s.active = true
+    elseif type == "g" then
+        s.original_color = {r = 0, g = 0, b = 0.5}
+    end
+
     return s
 end
 

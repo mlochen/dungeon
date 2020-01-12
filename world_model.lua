@@ -1,4 +1,4 @@
--- Copyright (C) 2019 Marco Lochen
+-- Copyright (C) 2020 Marco Lochen
 
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,16 +22,15 @@ require("vec2D")
 World_model = {}
 World_model.__index = World_model
 
-function World_model.new()
-    local w = {}
-    setmetatable(w, World_model)
-    w.walls = {}
-    w.enemies = {}
-    w.switches = {}
-    return w
-end
+function World_model.new(level)
+    local world = {}
+    setmetatable(world, World_model)
+    world.player = nil
+    world.enemies = {}
+    world.characters = {}
+    world.walls = {}
+    world.switches = {}
 
-function World_model:init(level)
     local worldString = level.worldString
     local w = level.worldWidth
     local h = #worldString / w
@@ -46,17 +45,25 @@ function World_model:init(level)
 
             if c1 ~= "#" and c2 == "#" then
                 local wallID = (x * 2^16) + (y * 2^8) + 0
-                self.walls[wallID] = createWall(Vec2D.new(x + 1, y), "w")
+                local wallPos = Vec2D.new(x + 1, y + 0.5)
+                local wallDir = Vec2D.new(0, 1)
+                world.walls[wallID] = createWall(wallPos, wallDir)
             elseif c1 == "#" and c2 ~= "#" then
                 local wallID = (x * 2^16) + (y * 2^8) + 1
-                self.walls[wallID] = createWall(Vec2D.new(x + 1, y), "e")
+                local wallPos = Vec2D.new(x + 1, y + 0.5)
+                local wallDir = Vec2D.new(0, -1)
+                world.walls[wallID] = createWall(wallPos, wallDir)
             end
             if c1 ~= "#" and c3 == "#" then
                 local wallID = (x * 2^16) + (y * 2^8) + 2
-                self.walls[wallID] = createWall(Vec2D.new(x, y + 1), "n")
+                local wallPos = Vec2D.new(x + 0.5, y + 1)
+                local wallDir = Vec2D.new(-1, 0)
+                world.walls[wallID] = createWall(wallPos, wallDir)
             elseif c1 == "#" and c3 ~= "#" then
                 local wallID = (x * 2^16) + (y * 2^8) + 3
-                self.walls[wallID] = createWall(Vec2D.new(x, y + 1), "s")
+                local wallPos = Vec2D.new(x + 0.5, y + 1)
+                local wallDir = Vec2D.new(1, 0)
+                world.walls[wallID] = createWall(wallPos, wallDir)
             end
         end
     end
@@ -68,60 +75,40 @@ function World_model:init(level)
             local c = string.sub(worldString, i + 1, i + 1)
 
             if c == "p" then
-                self.player = Player:new(Vec2D.new(x + 0.5, y + 0.5), self)
+                world.player = Player:new(Vec2D.new(x + 0.5, y + 0.5), world)
+                table.insert(world.characters, world.player)
             elseif c == "e" then
-                table.insert(self.enemies, Enemy:new(Vec2D.new(x + 0.5, y + 0.5), self))
-            elseif c == "s" then
-                local switch = Switch:new(Vec2D.new(x, y))
-                switch.type = "s"
-                switch.active = true
-                table.insert(self.switches, switch)
-            elseif c == "g" then
-                local switch = Switch:new(Vec2D.new(x, y))
-                switch.type = "g"
-                switch.original_color = {r = 0, g = 0, b = 0.5}
-                table.insert(self.switches, switch)
+                local enemy = Enemy:new(Vec2D.new(x + 0.5, y + 0.5), world)
+                table.insert(world.enemies, enemy)
+                table.insert(world.characters, enemy)
+            elseif c == "s" or c == "g" then
+                local switch = Switch:new(Vec2D.new(x, y), c)
+                table.insert(world.switches, switch)
             end
         end
     end
 
-    return self.player
+    return world, world.player
 end
 
 function World_model:update(dt, mouseDelta)
-    -- update player
-    self.player:update(dt, mouseDelta)
-    local px = math.floor(self.player.pos.x)
-    local py = math.floor(self.player.pos.y)
-    for wx = px - 1, px + 1 do
-        for wy = py - 1, py + 1 do
-            for wf = 0, 3 do
-                local wallID = (wx * 2^16) + (wy * 2^8) + wf
-                if self.walls[wallID] ~= nil then
-                    self.player.pos = World_model.wallCollision(self.player, self.walls[wallID])
+    -- update characters
+    for _, c in pairs(self.characters) do
+        c:update(dt, mouseDelta)
+        if c.alive == true then
+            for _, otherCharacter in pairs(self.characters) do
+                if c ~= otherCharacter and otherCharacter.alive == true then
+                    c.pos = World_model.characterCollision(c, otherCharacter)
                 end
             end
-        end
-    end
-
-    -- update enemies
-    for _, enemy in pairs(self.enemies) do
-        enemy:update(dt)
-        if enemy.alive == true then
-            enemy.pos = World_model.characterCollision(enemy, player)
-            for _, otherEnemy in pairs(self.enemies) do
-                if enemy ~= otherEnemy then
-                    enemy.pos = World_model.characterCollision(enemy, otherEnemy)
-                end
-            end
-            local px = math.floor(enemy.pos.x)
-            local py = math.floor(enemy.pos.y)
-            for wx = px - 1, px + 1 do
-                for wy = py - 1, py + 1 do
+            local cx = math.floor(c.pos.x)
+            local cy = math.floor(c.pos.y)
+            for wx = cx - 1, cx + 1 do
+                for wy = cy - 1, cy + 1 do
                     for wf = 0, 3 do
                         local wallID = (wx * 2^16) + (wy * 2^8) + wf
                         if self.walls[wallID] ~= nil then
-                            enemy.pos = World_model.wallCollision(enemy, self.walls[wallID])
+                            c.pos = World_model.wallCollision(c, self.walls[wallID])
                         end
                     end
                 end
@@ -131,18 +118,17 @@ function World_model:update(dt, mouseDelta)
 
     -- update switches
     local goalActive = true
+    local goal = nil
     for _, switch in pairs(self.switches) do
         switch:update(dt, self.player)
         if switch.type == "s" and switch.pushed == false then
             goalActive = false
+        elseif switch.type == "g" then
+            goal = switch
         end
     end
     if goalActive == true then
-        for _, switch in pairs(self.switches) do
-            if switch.type == "g" then
-                switch.active = true
-            end
-        end
+        goal.active = true
     end
 end
 
@@ -153,27 +139,22 @@ end
 function World_model:getTarget(sv, v)
     local obj = {}
 
-    local v1 = Vec2D.rotateByVec(player.pos - sv, v)
-    if v1.x > 0.1 and math.abs(v1.y) < player.radius then
-        player.dist = Vec2D.getDistance(sv, player.pos)
-        table.insert(obj, player)
-    end
-
-    for _, wall in pairs(self.walls) do
-        local v1 = Vec2D.rotateByVec(wall.p1 - sv, v)
-        local v2 = Vec2D.rotateByVec(wall.p2 - sv, v)
+    for _, w in pairs(self.walls) do
+        local v1 = Vec2D.rotateByVec(w.p1 - sv, v)
+        local v2 = Vec2D.rotateByVec(w.p2 - sv, v)
         if v1.x > 0 and v2.x > 0 and v1.y * v2.y < 0 then
-            wall.dist = Vec2D.getDistance(sv, wall.center)
-            table.insert(obj, wall)
+            w.dist = Vec2D.getLength(sv - w.pos)
+            table.insert(obj, w)
         end
     end
 
-    for _, enemy in pairs(self.enemies) do
-        if enemy.alive == true then
-            local v1 = Vec2D.rotateByVec(enemy.pos - sv, v)
-            if v1.x > 0.1 and math.abs(v1.y) < enemy.radius then
-                enemy.dist = Vec2D.getDistance(sv, enemy.pos)
-                table.insert(obj, enemy)
+    for _, c in pairs(self.characters) do
+        if c.alive == true then
+            local dist = Vec2D.getLength(Vec2D.project(v, c.pos - sv))
+            local offset = Vec2D.getLength(Vec2D.project(v, Vec2D.rotate(c.pos - sv, math.pi / 2)))
+            if dist >= c.radius and offset <= c.radius then
+                c.dist = Vec2D.getLength(sv - c.pos)
+                table.insert(obj, c)
             end
         end
     end
@@ -186,69 +167,40 @@ function World_model.characterCollision(character, otherCharacter)
     local minDist = character.radius + otherCharacter.radius
     local diff = character.pos - otherCharacter.pos
     local dist = Vec2D.getLength(diff)
+
+    local newPos = character.pos
     if dist < minDist then
-        return otherCharacter.pos + Vec2D.mul(Vec2D.normalize(diff), minDist)
-    else
-        return character.pos
+        newPos = otherCharacter.pos + Vec2D.mul(Vec2D.normalize(diff), minDist)
     end
+
+    return newPos
 end
 
 function World_model.wallCollision(character, wall)
-    local wallFaceDist = 0
-    local parallelOffset = 0
-    if wall.face == "n" then
-        wallFaceDist = wall.center.y - character.pos.y
-        parallelOffset = wall.center.x - character.pos.x
-    elseif wall.face == "s" then
-        wallFaceDist = character.pos.y - wall.center.y
-        parallelOffset = character.pos.x - wall.center.x
-    elseif wall.face == "w" then
-        wallFaceDist = wall.center.x - character.pos.x
-        parallelOffset = character.pos.y - wall.center.y
-    elseif wall.face == "e" then
-        wallFaceDist = character.pos.x - wall.center.x
-        parallelOffset = wall.center.y - character.pos.y
-    end
+    local faceDist = Vec2D.getLength(Vec2D.project(character.pos - wall.pos, wall.normal))
+    local paraOffset = Vec2D.getLength(Vec2D.project(character.pos - wall.pos, wall.direction))
 
-    local xCorr, yCorr = 0, 0
-    if math.abs(parallelOffset) <= 0.5 then
-        if math.abs(wallFaceDist) < character.radius then
-            yCorr = character.radius - wallFaceDist
+    local newPos = character.pos
+    if math.abs(paraOffset) <= 0.5 then
+        if math.abs(faceDist) < character.radius then
+            local correction = Vec2D.mul(wall.normal, character.radius - faceDist)
+            newPos = character.pos + correction
         end
-    elseif parallelOffset < -0.5 and wallFaceDist >= 0 then
-        local dx, dy = parallelOffset + 0.5, wallFaceDist
-        local dist = math.sqrt(dx^2 + dy^2)
+    elseif paraOffset < -0.5 and faceDist > 0 then
+        local cornerOffset = character.pos - wall.p1
+        local dist = Vec2D.getLength(cornerOffset)
         if dist < character.radius then
-            local f = character.radius / dist
-            xCorr = (dx * f) - dx
-            yCorr = (dy * f) - dy
+            newPos = character.pos + Vec2D.mul(cornerOffset, character.radius - dist)
         end
-    elseif parallelOffset > 0.5 then
-        local dx, dy = parallelOffset - 0.5, wallFaceDist
-        local dist = math.sqrt(dx^2 + dy^2)
+    elseif paraOffset > 0.5 and faceDist > 0 then
+        local cornerOffset = character.pos - wall.p2
+        local dist = Vec2D.getLength(cornerOffset)
         if dist < character.radius then
-            local f = character.radius / dist
-            xCorr = (dx * f) - dx
-            yCorr = (dy * f) - dy
+            newPos = character.pos + Vec2D.mul(cornerOffset, character.radius - dist)
         end
     end
 
-    local pxn, pyn = character.pos.x, character.pos.y
-    if wall.face == "n" then
-        pxn = pxn - xCorr
-        pyn = pyn - yCorr
-    elseif wall.face == "s" then
-        pxn = pxn + xCorr
-        pyn = pyn + yCorr
-    elseif wall.face == "w" then
-        pxn = pxn - yCorr
-        pyn = pyn - xCorr
-    elseif wall.face == "e" then
-        pxn = pxn + yCorr
-        pyn = pyn + xCorr
-    end
-
-    return Vec2D.new(pxn, pyn)
+    return newPos
 end
 
 function World_model:getState()
@@ -259,7 +211,7 @@ function World_model:getState()
         end
     end
 
-    if self.player.health <= 0 then
+    if self.player.alive == false then
         return "gameOver"
     elseif levelComplete == true then
         return "levelComplete"
